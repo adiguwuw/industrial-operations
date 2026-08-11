@@ -16,6 +16,7 @@ class RolePermissionSeeder extends Seeder
     {
         $permission = [
             'incident.view',
+            'incident.view-all',
             'incident.view-own',
             'incident.create',
             'incident.update',
@@ -55,6 +56,7 @@ class RolePermissionSeeder extends Seeder
 
         $k3Officer->givePermissionTo([
             'incident.view',
+            'incident.view-all',
             'incident.create',
             'incident.update',
             'incident.investigate',

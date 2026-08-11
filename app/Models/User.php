@@ -11,6 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token'])]
@@ -30,5 +31,20 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function incidents(): HasMany
+    {
+        return $this->hasMany(Incident::class, 'user_id');
+    }
+
+    public function incidentComments(): HasMany
+    {
+        return $this->hasMany(IncidentComment::class, 'user_id');
+    }
+
+    public function incidentStatusHistories(): HasMany
+    {
+        return $this->hasMany(IncidentStatusHistory::class, 'user_id');
     }
 }
