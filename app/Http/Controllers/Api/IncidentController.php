@@ -16,6 +16,10 @@ use App\Services\Incident\IncidentWorkflowService;
 use App\Http\Requests\Incident\StoreIncidentCommentRequest;
 use App\Http\Resources\IncidentCommentResource;
 use App\Services\Incident\IncidentCommentService;
+use App\Http\Requests\Incident\StoreIncidentPhotoRequest;
+use App\Http\Resources\IncidentPhotoResource;
+use App\Models\IncidentPhoto;
+use App\Services\Incident\IncidentPhotoService;
 
 class IncidentController extends Controller
 {
@@ -147,5 +151,50 @@ class IncidentController extends Controller
             ->get();
 
         return IncidentCommentResource::collection($comments);
+    }
+
+    public function storePhoto(
+        StoreIncidentPhotoRequest $request,
+        Incident $incident,
+        IncidentPhotoService $photoService
+    ): IncidentPhotoResource {
+        $photo = $photoService->upload(
+            $incident,
+            $request->user(),
+            $request->file('photo')
+        );
+
+        return new IncidentPhotoResource($photo);
+    }
+
+    public function photos(
+        Request $request,
+        Incident $incident
+    ) {
+        Gate::authorize('view', $incident);
+
+        return IncidentPhotoResource::collection(
+            $incident->photos()->latest()->get()
+        );
+    }
+
+    public function destroyPhoto(
+        Request $request,
+        Incident $incident,
+        IncidentPhoto $photo,
+        IncidentPhotoService $photoService
+    ) {
+        Gate::authorize('comment', $incident);
+
+        abort_unless(
+            $photo->incident_id === $incident->id,
+            404
+        );
+
+        $photoService->delete($photo);
+
+        return response()->json([
+            'message' => 'Incident photo deleted successfully.',
+        ]);
     }
 }
