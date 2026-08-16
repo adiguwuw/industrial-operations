@@ -1,0 +1,10 @@
+[90m= [39m[34;4mApp\Models\User[39;24m {#8718
+    [34mid[39m: [35m4[39m,
+    [34mname[39m: [32m"[39m[32mIndops Employee[39m[32m"[39m,
+    [34memail[39m: [32m"[39m[32memployee@indops.test[39m[32m"[39m,
+    [34memail_verified_at[39m: [36mnull[39m,
+    #[33mpassword[39m: [32m"[39m\$[32m2y[39m\$[32m12[39m\$[32m8.I6axoWExLv0YG9MgxP5OAGxMKe0wNgvy24bUizi0qbbTUliFPui[39m[32m"[39m,
+    #[33mremember_token[39m: [36mnull[39m,
+    [34mcreated_at[39m: [32m"[39m[32m2026-08-11 12:57:29[39m[32m"[39m,
+    [34mupdated_at[39m: [32m"[39m[32m2026-08-11 12:57:29[39m[32m"[39m,
+  }

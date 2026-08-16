@@ -22,4 +22,5 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/incidents/{incident}/photos',[IncidentController::class, 'photos']);
     Route::post('/incidents/{incident}/photos',[IncidentController::class, 'storePhoto']);
     Route::delete('/incidents/{incident}/photos/{photo}',[IncidentController::class, 'destroyPhoto']);
+    Route::get('/incidents/{incident}/history',[IncidentController::class, 'history']);
 });

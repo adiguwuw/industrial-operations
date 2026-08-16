@@ -20,6 +20,7 @@ use App\Http\Requests\Incident\StoreIncidentPhotoRequest;
 use App\Http\Resources\IncidentPhotoResource;
 use App\Models\IncidentPhoto;
 use App\Services\Incident\IncidentPhotoService;
+use App\Http\Resources\IncidentStatusHistoryResource;
 
 class IncidentController extends Controller
 {
@@ -196,5 +197,16 @@ class IncidentController extends Controller
         return response()->json([
             'message' => 'Incident photo deleted successfully.',
         ]);
+    }
+
+    public function history(Incident $incident)
+    {
+        Gate::authorize('view', $incident);
+
+        $histories = $incident->statusHistories()
+            ->with('user')
+            ->get();
+
+        return IncidentStatusHistoryResource::collection($histories);
     }
 }
