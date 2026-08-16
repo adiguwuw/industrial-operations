@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\AuthController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\IncidentController;
+use App\Http\Controllers\Api\DashboardController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -25,5 +26,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/incidents/{incident}/photos',[IncidentController::class, 'storePhoto']);
     Route::delete('/incidents/{incident}/photos/{photo}',[IncidentController::class, 'destroyPhoto']);
     Route::get('/incidents/{incident}/history',[IncidentController::class, 'history']);
+    Route::get('/dashboard', [DashboardController::class,'index',]);
     
 });
