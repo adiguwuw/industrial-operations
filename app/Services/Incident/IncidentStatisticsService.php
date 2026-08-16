@@ -48,4 +48,28 @@ class IncidentStatisticsService
             ->values()
             ->all();
     }
+
+    public function getTrends(string $period = 'daily'): array
+    {
+        $format = match ($period) {
+            'weekly' => '%x-W%v',
+            'monthly' => '%Y-%m',
+            default => '%Y-%m-%d',
+        };
+
+        return Incident::query()
+            ->select(
+                DB::raw("DATE_FORMAT(reported_at, '{$format}') as period"),
+                DB::raw('COUNT(*) as total')
+            )
+            ->groupBy('period')
+            ->orderBy('period')
+            ->get()
+            ->map(fn ($item) => [
+                'period' => $item->period,
+                'total' => (int) $item->total,
+            ])
+            ->values()
+            ->all();
+    }
 }

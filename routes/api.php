@@ -12,6 +12,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/incidents/statistics', [IncidentController::class,'statistics',]);
     Route::get('/incidents/statistics/categories', [IncidentController::class,'statisticsByCategory',]);
+    Route::get('/incidents/statistics/trends', [IncidentController::class,'statisticsTrends',]);
     Route::apiResource('incidents', IncidentController::class)->only([
         'index', 'store', 'show'    
         ]);

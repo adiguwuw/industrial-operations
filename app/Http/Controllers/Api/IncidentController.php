@@ -23,6 +23,7 @@ use App\Services\Incident\IncidentPhotoService;
 use App\Http\Resources\IncidentStatusHistoryResource;
 use App\Http\Requests\Incident\IndexIncidentRequest;
 use App\Services\Incident\IncidentStatisticsService;
+use App\Http\Requests\Incident\IncidentTrendRequest;
 
 class IncidentController extends Controller
 {
@@ -270,6 +271,20 @@ class IncidentController extends Controller
     ) {
         return response()->json([
             'data' => $statisticsService->getByCategory(),
+        ]);
+    }
+
+    public function statisticsTrends(
+        IncidentTrendRequest $request,
+        IncidentStatisticsService $statisticsService
+    ) {
+        return response()->json([
+            'data' => [
+                'period' => $request->period(),
+                'items' => $statisticsService->getTrends(
+                    $request->period()
+                ),
+            ],
         ]);
     }
 }
