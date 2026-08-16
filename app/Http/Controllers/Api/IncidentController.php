@@ -22,6 +22,7 @@ use App\Models\IncidentPhoto;
 use App\Services\Incident\IncidentPhotoService;
 use App\Http\Resources\IncidentStatusHistoryResource;
 use App\Http\Requests\Incident\IndexIncidentRequest;
+use App\Services\Incident\IncidentStatisticsService;
 
 class IncidentController extends Controller
 {
@@ -254,5 +255,21 @@ class IncidentController extends Controller
             ->get();
 
         return IncidentStatusHistoryResource::collection($histories);
+    }
+
+    public function statistics(
+        IncidentStatisticsService $statisticsService
+    ) {
+        return response()->json([
+            'data' => $statisticsService->getStatistics(),
+        ]);
+    }
+
+    public function statisticsByCategory(
+        IncidentStatisticsService $statisticsService
+    ) {
+        return response()->json([
+            'data' => $statisticsService->getByCategory(),
+        ]);
     }
 }
