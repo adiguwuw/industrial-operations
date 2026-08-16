@@ -21,29 +21,75 @@ use App\Http\Resources\IncidentPhotoResource;
 use App\Models\IncidentPhoto;
 use App\Services\Incident\IncidentPhotoService;
 use App\Http\Resources\IncidentStatusHistoryResource;
+use App\Http\Requests\Incident\IndexIncidentRequest;
 
 class IncidentController extends Controller
 {
-    public function index(Request $request)
+    public function index(IndexIncidentRequest $request)
     {
-        $user = $request->user();
-
         $query = Incident::query()
             ->with([
-                'category',
-                'reporter',
-            ])
-            ->latest('reported_at');
+                'reporter:id,name',
+                'category:id,name',
+            ]);
 
-        if (!$user->can('incident.view-all')) {
-            $query->where('user_id', $user->id);
+        if ($request->filled('status')) {
+            $query->where(
+                'status',
+                $request->string('status')
+            );
         }
 
+        if ($request->filled('severity')) {
+            $query->where(
+                'severity',
+                $request->string('severity')
+            );
+        }
+
+        if ($request->filled('category_id')) {
+            $query->where(
+                'category_id',
+                $request->string('category_id')
+            );
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->string('search');
+
+            $query->where(function ($query) use ($search) {
+                $query
+                    ->where('incident_number', 'like', "%{$search}%")
+                    ->orWhere('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $sort = $request->input('sort', '-reported_at');
+
+        $direction = str_starts_with($sort, '-') ? 'desc' : 'asc';
+
+        $column = ltrim($sort, '-');
+
+        if ($column === 'severity') {
+            $query->orderByRaw(
+                "CASE severity
+                    WHEN 'critical' THEN 4
+                    WHEN 'high' THEN 3
+                    WHEN 'medium' THEN 2
+                    WHEN 'low' THEN 1
+                END {$direction}"
+            );
+        } else {
+            $query->orderBy($column, $direction);
+        }
+
+        $perPage = $request->integer('per_page', 15);
+
         return IncidentResource::collection(
-            $query->paginate(15)
+            $query->paginate($perPage)
         );
     }
-
     public function store(
         StoreIncidentRequest $request,
         IncidentNumberService $numberService
