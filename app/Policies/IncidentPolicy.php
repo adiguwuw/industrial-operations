@@ -25,6 +25,10 @@ class IncidentPolicy
             return true;
         }
 
+        if ($user->can('incident.view')) {
+            return true;
+        }
+
         return $user->can('incident.view-own')
             && $incident->user_id === $user->id;
     }

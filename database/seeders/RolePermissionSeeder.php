@@ -52,9 +52,9 @@ class RolePermissionSeeder extends Seeder
             'guard_name' => 'web',
         ]);
 
-        $admin->givePermissionTo($permission);
+        $admin->syncPermissions($permission);
 
-        $k3Officer->givePermissionTo([
+        $k3Officer->syncPermissions([
             'incident.view',
             'incident.view-all',
             'incident.create',
@@ -64,14 +64,14 @@ class RolePermissionSeeder extends Seeder
             'incident.comment',
         ]);
 
-        $supervisor->givePermissionTo([
+        $supervisor->syncPermissions([
             'incident.view',
             'incident.investigate',
             'incident.resolve',
             'incident.comment',
         ]);
 
-        $employee->givePermissionTo([
+        $employee->syncPermissions([
             'incident.view-own',
             'incident.create',
             'incident.comment',

@@ -96,6 +96,8 @@ class IncidentController extends Controller
         StoreIncidentRequest $request,
         IncidentNumberService $numberService
     ): IncidentResource {
+        Gate::authorize('create', Incident::class);
+
         $incident = Incident::create([
             'incident_number' => $numberService->generate(),
 
@@ -150,6 +152,8 @@ class IncidentController extends Controller
         Incident $incident,
         IncidentWorkflowService $workflow
     ): IncidentResource {
+        Gate::authorize('investigate', $incident);
+
         $incident = $workflow->investigate(
             $incident,
             $request->user(),
@@ -164,6 +168,8 @@ class IncidentController extends Controller
         Incident $incident,
         IncidentWorkflowService $workflow
     ): IncidentResource {
+        Gate::authorize('resolve', $incident);
+
         $incident = $workflow->resolve(
             $incident,
             $request->user(),
@@ -207,6 +213,8 @@ class IncidentController extends Controller
         Incident $incident,
         IncidentPhotoService $photoService
     ): IncidentPhotoResource {
+        Gate::authorize('comment', $incident);
+        
         $photo = $photoService->upload(
             $incident,
             $request->user(),
