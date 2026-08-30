@@ -23,11 +23,12 @@ class RolePermissionSeeder extends Seeder
             'incident.investigate',
             'incident.resolve',
             'incident.comment',
+            'incident.statistics',
         ];
 
-        foreach ($permission as $permission) {
+        foreach ($permission as $permissionName) {
            Permission::firstOrCreate([
-            'name' => $permission,
+            'name' => $permissionName,
             'guard_name' => 'web'
            ]);
         }
@@ -62,6 +63,7 @@ class RolePermissionSeeder extends Seeder
             'incident.investigate',
             'incident.resolve',
             'incident.comment',
+            'incident.statistics',
         ]);
 
         $supervisor->syncPermissions([
@@ -69,6 +71,7 @@ class RolePermissionSeeder extends Seeder
             'incident.investigate',
             'incident.resolve',
             'incident.comment',
+            'incident.statistics',
         ]);
 
         $employee->syncPermissions([

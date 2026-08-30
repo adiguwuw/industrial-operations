@@ -4,9 +4,21 @@ namespace App\Policies;
 
 use App\Models\Incident;
 use App\Models\User;
+use iluminate\Support\Facades\Gate;
 
 class IncidentPolicy
 {
+
+    public function index(
+        DashboardService $dashboardService
+    ): JsonResponse {
+        Gate::authorize('statistics', Incident::class);
+
+        return response()->json([
+            'data' => $dashboardService->getOverview(),
+        ]);
+    }
+
     /**
      * Determine whether the user can view any incidents.
      */
@@ -70,7 +82,12 @@ class IncidentPolicy
      */
     public function comment(User $user, Incident $incident): bool
     {
-        return $user->can('incident.comment');
+        if ($user->can('incident.view-all')) {
+            return $user->can('incident.comment');
+        }
+
+        return $user->can('incident.comment')
+            && $incident->user_id === $user->id;
     }
 
     /**
@@ -95,5 +112,10 @@ class IncidentPolicy
     public function forceDelete(User $user, Incident $incident): bool
     {
         return false;
+    }
+
+    public function statistics(User $user): bool
+    {
+        return $user->can('incident.statistics');
     }
 }

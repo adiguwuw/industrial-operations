@@ -29,11 +29,17 @@ class IncidentController extends Controller
 {
     public function index(IndexIncidentRequest $request)
     {
+        Gate::authorize('viewAny', Incident::class);
+
         $query = Incident::query()
             ->with([
                 'reporter:id,name',
                 'category:id,name',
             ]);
+
+        if (! $request->user()->can('incident.view-all')) {
+            $query->where('user_id', $request->user()->id);
+        }
 
         if ($request->filled('status')) {
             $query->where(
@@ -184,7 +190,9 @@ class IncidentController extends Controller
         Incident $incident,
         IncidentCommentService $commentService
     ): IncidentCommentResource {
-        $comment = $commentService->create(
+        Gate::authorize('comment', $incident);
+
+    $comment = $commentService->create(
             $incident,
             $request->user(),
             $request->validated('comment')
@@ -269,6 +277,8 @@ class IncidentController extends Controller
     public function statistics(
         IncidentStatisticsService $statisticsService
     ) {
+        Gate::authorize('statistics', Incident::class);
+
         return response()->json([
             'data' => $statisticsService->getStatistics(),
         ]);
@@ -277,6 +287,8 @@ class IncidentController extends Controller
     public function statisticsByCategory(
         IncidentStatisticsService $statisticsService
     ) {
+        Gate::authorize('statistics', Incident::class);
+
         return response()->json([
             'data' => $statisticsService->getByCategory(),
         ]);
@@ -286,6 +298,8 @@ class IncidentController extends Controller
         IncidentTrendRequest $request,
         IncidentStatisticsService $statisticsService
     ) {
+        Gate::authorize('statistics', Incident::class);
+
         return response()->json([
             'data' => [
                 'period' => $request->period(),
