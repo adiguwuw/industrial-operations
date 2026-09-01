@@ -24,6 +24,7 @@ use App\Http\Resources\IncidentStatusHistoryResource;
 use App\Http\Requests\Incident\IndexIncidentRequest;
 use App\Services\Incident\IncidentStatisticsService;
 use App\Http\Requests\Incident\IncidentTrendRequest;
+use Illuminate\Support\Facades\Storage;
 
 class IncidentController extends Controller
 {
@@ -308,5 +309,33 @@ class IncidentController extends Controller
                 ),
             ],
         ]);
+    }
+
+    public function file(
+        Request $request,
+        Incident $incident,
+        IncidentPhoto $photo
+    ) {
+        Gate::authorize('view', $incident);
+
+        abort_unless(
+            $photo->incident_id === $incident->id,
+            404
+        );
+
+        abort_unless(
+            Storage::disk('local')->exists($photo->file_path),
+            404
+        );
+
+        return response()->file(
+            Storage::disk('local')->path($photo->file_path),
+            [
+                'Content-Type' => $photo->mime_type,
+                'Content-Disposition' => 'inline; filename="' .
+                    addslashes($photo->original_name) .
+                    '"',
+            ]
+        );
     }
 }

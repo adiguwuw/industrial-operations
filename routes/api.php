@@ -14,10 +14,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/incidents/statistics', [IncidentController::class,'statistics',]);
     Route::get('/incidents/statistics/categories', [IncidentController::class,'statisticsByCategory',]);
     Route::get('/incidents/statistics/trends', [IncidentController::class,'statisticsTrends',]);
-    Route::apiResource('incidents', IncidentController::class)->only([
-        'index', 'store', 'show'    
-        ]);
-
+    Route::apiResource('incidents', IncidentController::class)->only(['index', 'store', 'show']);
     Route::post('incidents/{incident}/investigate', [IncidentController::class, 'investigate']);
     Route::post('incidents/{incident}/resolve', [IncidentController::class, 'resolve']);
     Route::get('/incidents/{incident}/comments',[IncidentController::class, 'comments']);
@@ -27,5 +24,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('/incidents/{incident}/photos/{photo}',[IncidentController::class, 'destroyPhoto']);
     Route::get('/incidents/{incident}/history',[IncidentController::class, 'history']);
     Route::get('/dashboard', [DashboardController::class,'index',]);
+    Route::get('/incidents/{incident}/photos/{photo}/file',[IncidentController::class, 'file'])->name('incidents.photos.file');
     
 });

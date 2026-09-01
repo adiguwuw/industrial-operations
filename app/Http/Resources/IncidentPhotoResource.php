@@ -20,7 +20,13 @@ class IncidentPhotoResource extends JsonResource
                 'original_name' => $this->original_name,
                 'mime_type' => $this->mime_type,
                 'file_size' => $this->file_size,
-                'url' => Storage::disk('public')->url($this->file_path),
+                'url' => route(
+                    'incidents.photos.file',
+                    [
+                        'incident' => $this->incident_id,
+                        'photo' => $this->id,
+                    ]
+                ),
                 'created_at' => $this->created_at,
         ];
     }

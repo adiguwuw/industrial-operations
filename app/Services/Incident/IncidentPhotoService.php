@@ -6,6 +6,7 @@ use App\Models\Incident;
 use App\Models\IncidentPhoto;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class IncidentPhotoService
 {
@@ -16,7 +17,7 @@ class IncidentPhotoService
     ): IncidentPhoto {
         $path = $photo->store(
             "incidents/{$incident->id}",
-            'public'
+            'local'
         );
 
         return $incident->photos()->create([
@@ -30,7 +31,7 @@ class IncidentPhotoService
     public function delete(IncidentPhoto $photo): void
     {
         if ($photo->file_path) {
-            \Storage::disk('public')->delete($photo->file_path);
+            \Storage::disk('local')->delete($photo->file_path);
         }
 
         $photo->delete();
