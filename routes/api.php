@@ -5,6 +5,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\IncidentController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\IncidentCategoryController;
+use App\Http\Controllers\Api\NotificationController;
 
 Route::post('/login', [AuthController::class, 'login']);
 
@@ -25,5 +27,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/incidents/{incident}/history',[IncidentController::class, 'history']);
     Route::get('/dashboard', [DashboardController::class,'index',]);
     Route::get('/incidents/{incident}/photos/{photo}/file',[IncidentController::class, 'file'])->name('incidents.photos.file');
+    Route::get('/incident-categories', [IncidentCategoryController::class, 'index']);
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     
 });

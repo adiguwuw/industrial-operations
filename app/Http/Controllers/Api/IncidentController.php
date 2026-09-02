@@ -311,6 +311,8 @@ class IncidentController extends Controller
         ]);
     }
 
+
+    
     public function file(
         Request $request,
         Incident $incident,
