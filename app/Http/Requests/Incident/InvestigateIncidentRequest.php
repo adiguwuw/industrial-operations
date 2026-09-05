@@ -23,7 +23,18 @@ class InvestigateIncidentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'notes' => ['nullable', 'string', 'max:500'],
+            'notes' => [
+                'nullable',
+                'string',
+                'max:500',
+            ],
+
+            'photo' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
         ];
     }
 }

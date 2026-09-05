@@ -7,7 +7,7 @@ use App\Http\Controllers\Api\IncidentController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\IncidentCategoryController;
 use App\Http\Controllers\Api\NotificationController;
-
+use App\Http\Controllers\Api\UserController;
 Route::post('/login', [AuthController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -31,5 +31,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
+    Route::middleware('role:admin')->group(function () {
+        Route::apiResource('users', UserController::class);
+        Route::get('users/{user}/photo', [UserController::class, 'photo'])->name('users.photo');
+    });
+    
+    
     
 });

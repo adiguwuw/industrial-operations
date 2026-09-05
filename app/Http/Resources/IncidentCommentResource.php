@@ -23,6 +23,10 @@ class IncidentCommentResource extends JsonResource
                 'name' => $this->user->name,
             ],
 
+            'photos' => IncidentPhotoResource::collection(
+                $this->whenLoaded('photos')
+            ),
+
             'created_at' => $this->created_at,
         ];
     }

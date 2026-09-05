@@ -19,10 +19,16 @@ class IncidentStatusHistoryResource extends JsonResource
             'from_status' => $this->from_status,
             'to_status' => $this->to_status,
             'notes' => $this->notes,
+
             'changed_by' => [
                 'id' => $this->user->id,
                 'name' => $this->user->name,
             ],
+
+            'photos' => IncidentPhotoResource::collection(
+                $this->whenLoaded('photos')
+            ),
+
             'created_at' => $this->created_at,
         ];
     }

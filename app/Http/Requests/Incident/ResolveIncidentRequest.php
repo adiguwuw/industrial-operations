@@ -23,7 +23,19 @@ class ResolveIncidentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'notes' => ['required', 'string','min:10', 'max:500'],
+            'notes' => [
+                'required',
+                'string',
+                'min:10',
+                'max:500',
+            ],
+
+            'photo' => [
+                'nullable',
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:5120',
+            ],
         ];
     }
 }

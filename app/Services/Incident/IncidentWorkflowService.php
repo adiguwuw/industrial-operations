@@ -3,6 +3,7 @@
 namespace App\Services\Incident;
 
 use App\Models\Incident;
+use App\Models\IncidentStatusHistory;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -13,7 +14,7 @@ class IncidentWorkflowService
         Incident $incident,
         User $user,
         ?string $notes = null
-    ): Incident {
+    ): array {
         return DB::transaction(function () use (
             $incident,
             $user,
@@ -33,18 +34,21 @@ class IncidentWorkflowService
                 'status' => 'investigating',
             ]);
 
-            $incident->statusHistories()->create([
+            $history = $incident->statusHistories()->create([
                 'user_id' => $user->id,
                 'from_status' => $fromStatus,
                 'to_status' => 'investigating',
                 'notes' => $notes,
             ]);
 
-            return $incident->fresh([
-                'category',
-                'reporter',
-                'statusHistories',
-            ]);
+            return [
+                'incident' => $incident->fresh([
+                    'category',
+                    'reporter',
+                    'statusHistories',
+                ]),
+                'history' => $history,
+            ];
         });
     }
 
@@ -52,7 +56,7 @@ class IncidentWorkflowService
         Incident $incident,
         User $user,
         string $notes
-    ): Incident {
+    ): array {
         return DB::transaction(function () use (
             $incident,
             $user,
@@ -73,18 +77,21 @@ class IncidentWorkflowService
                 'resolved_at' => now(),
             ]);
 
-            $incident->statusHistories()->create([
+            $history = $incident->statusHistories()->create([
                 'user_id' => $user->id,
                 'from_status' => $fromStatus,
                 'to_status' => 'resolved',
                 'notes' => $notes,
             ]);
 
-            return $incident->fresh([
-                'category',
-                'reporter',
-                'statusHistories',
-            ]);
+            return [
+                'incident' => $incident->fresh([
+                    'category',
+                    'reporter',
+                    'statusHistories',
+                ]),
+                'history' => $history,
+            ];
         });
     }
 }

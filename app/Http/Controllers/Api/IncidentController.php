@@ -3,27 +3,26 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Incident\StoreIncidentRequest;
-use App\Http\Resources\IncidentResource;
-use App\Models\Incident;
-use App\Services\IncidentNumberService;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
+use App\Http\Requests\Incident\IncidentTrendRequest;
+use App\Http\Requests\Incident\IndexIncidentRequest;
 use App\Http\Requests\Incident\InvestigateIncidentRequest;
 use App\Http\Requests\Incident\ResolveIncidentRequest;
-use App\Services\Incident\IncidentWorkflowService;
 use App\Http\Requests\Incident\StoreIncidentCommentRequest;
-use App\Http\Resources\IncidentCommentResource;
-use App\Services\Incident\IncidentCommentService;
 use App\Http\Requests\Incident\StoreIncidentPhotoRequest;
+use App\Http\Requests\Incident\StoreIncidentRequest;
+use App\Http\Resources\IncidentCommentResource;
 use App\Http\Resources\IncidentPhotoResource;
-use App\Models\IncidentPhoto;
-use App\Services\Incident\IncidentPhotoService;
+use App\Http\Resources\IncidentResource;
 use App\Http\Resources\IncidentStatusHistoryResource;
-use App\Http\Requests\Incident\IndexIncidentRequest;
+use App\Models\Incident;
+use App\Models\IncidentPhoto;
+use App\Services\Incident\IncidentCommentService;
+use App\Services\Incident\IncidentPhotoService;
 use App\Services\Incident\IncidentStatisticsService;
-use App\Http\Requests\Incident\IncidentTrendRequest;
+use App\Services\Incident\IncidentWorkflowService;
+use App\Services\IncidentNumberService;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 
 class IncidentController extends Controller
@@ -99,6 +98,7 @@ class IncidentController extends Controller
             $query->paginate($perPage)
         );
     }
+
     public function store(
         StoreIncidentRequest $request,
         IncidentNumberService $numberService
@@ -107,25 +107,15 @@ class IncidentController extends Controller
 
         $incident = Incident::create([
             'incident_number' => $numberService->generate(),
-
             'user_id' => $request->user()->id,
-
             'category_id' => $request->category_id,
-
             'title' => $request->title,
-
             'description' => $request->description,
-
             'location_address' => $request->location_address,
-
             'latitude' => $request->latitude,
-
             'longitude' => $request->longitude,
-
             'severity' => $request->severity,
-
             'status' => 'pending',
-
             'reported_at' => now(),
         ]);
 
@@ -147,8 +137,10 @@ class IncidentController extends Controller
             'category',
             'reporter',
             'photos',
-            'comments',
-            'statusHistories',
+            'comments.user',
+            'comments.photos',
+            'statusHistories.user',
+            'statusHistories.photos',
         ]);
 
         return new IncidentResource($incident);
@@ -157,49 +149,107 @@ class IncidentController extends Controller
     public function investigate(
         InvestigateIncidentRequest $request,
         Incident $incident,
-        IncidentWorkflowService $workflow
+        IncidentWorkflowService $workflow,
+        IncidentPhotoService $photoService
     ): IncidentResource {
         Gate::authorize('investigate', $incident);
 
-        $incident = $workflow->investigate(
+        $result = $workflow->investigate(
             $incident,
             $request->user(),
             $request->validated('notes')
         );
 
-        return new IncidentResource($incident);
+        if ($request->hasFile('photo')) {
+            $photoService->upload(
+                $result['incident'],
+                $request->user(),
+                $request->file('photo'),
+                null,
+                $result['history']
+            );
+        }
+
+        return new IncidentResource(
+            $result['incident']->load([
+                'category',
+                'reporter',
+                'photos',
+                'comments.user',
+                'comments.photos',
+                'statusHistories.user',
+                'statusHistories.photos',
+            ])
+        );
     }
 
     public function resolve(
         ResolveIncidentRequest $request,
         Incident $incident,
-        IncidentWorkflowService $workflow
+        IncidentWorkflowService $workflow,
+        IncidentPhotoService $photoService
     ): IncidentResource {
         Gate::authorize('resolve', $incident);
 
-        $incident = $workflow->resolve(
+        $result = $workflow->resolve(
             $incident,
             $request->user(),
             $request->validated('notes')
         );
 
-        return new IncidentResource($incident);
+        if ($request->hasFile('photo')) {
+            $photoService->upload(
+                $result['incident'],
+                $request->user(),
+                $request->file('photo'),
+                null,
+                $result['history']
+            );
+        }
+
+        return new IncidentResource(
+            $result['incident']->load([
+                'category',
+                'reporter',
+                'photos',
+                'comments.user',
+                'comments.photos',
+                'statusHistories.user',
+                'statusHistories.photos',
+            ])
+        );
     }
 
     public function storeComment(
         StoreIncidentCommentRequest $request,
         Incident $incident,
-        IncidentCommentService $commentService
+        IncidentCommentService $commentService,
+        IncidentPhotoService $photoService
     ): IncidentCommentResource {
         Gate::authorize('comment', $incident);
 
-    $comment = $commentService->create(
+        $comment = $commentService->create(
             $incident,
             $request->user(),
             $request->validated('comment')
         );
 
-        return new IncidentCommentResource($comment);
+        if ($request->hasFile('photo')) {
+            $photoService->upload(
+                $incident,
+                $request->user(),
+                $request->file('photo'),
+                $comment,
+                null
+            );
+        }
+
+        return new IncidentCommentResource(
+            $comment->load([
+                'user',
+                'photos',
+            ])
+        );
     }
 
     public function comments(
@@ -210,7 +260,10 @@ class IncidentController extends Controller
 
         $comments = $incident
             ->comments()
-            ->with('user')
+            ->with([
+                'user',
+                'photos',
+            ])
             ->latest()
             ->get();
 
@@ -223,7 +276,7 @@ class IncidentController extends Controller
         IncidentPhotoService $photoService
     ): IncidentPhotoResource {
         Gate::authorize('comment', $incident);
-        
+
         $photo = $photoService->upload(
             $incident,
             $request->user(),
@@ -264,12 +317,17 @@ class IncidentController extends Controller
         ]);
     }
 
-    public function history(Incident $incident)
-    {
+    public function history(
+        Incident $incident
+    ) {
         Gate::authorize('view', $incident);
 
-        $histories = $incident->statusHistories()
-            ->with('user')
+        $histories = $incident
+            ->statusHistories()
+            ->with([
+                'user',
+                'photos',
+            ])
             ->get();
 
         return IncidentStatusHistoryResource::collection($histories);
@@ -311,8 +369,6 @@ class IncidentController extends Controller
         ]);
     }
 
-
-    
     public function file(
         Request $request,
         Incident $incident,
