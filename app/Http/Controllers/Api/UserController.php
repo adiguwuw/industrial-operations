@@ -160,8 +160,16 @@ class UserController extends Controller
         ]);
     }
 
-    public function photo(User $user)
+    public function photo(Request $request, User $user)
     {
+        $currentUser = $request->user();
+
+        abort_unless(
+            $currentUser->hasRole('admin') ||
+            $currentUser->id === $user->id,
+            403
+        );
+
         abort_unless($user->profile_photo_path, 404);
 
         abort_unless(

@@ -35,11 +35,14 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'roles' => $user->getRoleNames(),
+                'profile_photo_url' => $user->profile_photo_path
+                    ? "/users/{$user->id}/photo"
+                    : null,
             ],
             'token' => $token,
         ]);
     }
-
+    
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()?->delete();
@@ -49,7 +52,7 @@ class AuthController extends Controller
         ]);
     }
 
-    public function me(Request $request): JsonResponse
+    public function me(Request $request)
     {
         $user = $request->user();
 
@@ -60,6 +63,9 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'roles' => $user->getRoleNames(),
                 'permissions' => $user->getAllPermissions()->pluck('name'),
+                'profile_photo_url' => $user->profile_photo_path
+                    ? "/users/{$user->id}/photo"
+                    : null,
             ],
         ]);
     }

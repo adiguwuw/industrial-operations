@@ -33,18 +33,23 @@ class IncidentPolicy
      */
     public function view(User $user, Incident $incident): bool
     {
+        // User with view-all permission can see every incident.
         if ($user->can('incident.view-all')) {
             return true;
         }
 
+        // User with the general view permission can see every incident.
         if ($user->can('incident.view')) {
             return true;
         }
 
-        return $user->can('incident.view-own')
-            && $incident->user_id === $user->id;
-    }
+        // Users with view-own can only see incidents they reported.
+        if ($user->can('incident.view-own')) {
+            return (int) $incident->reporter_id === (int) $user->id;
+        }
 
+        return false;
+    }
     /**
      * Determine whether the user can create incidents.
      */

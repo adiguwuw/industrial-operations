@@ -32,10 +32,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     Route::middleware('role:admin')->group(function () {
-        Route::apiResource('users', UserController::class);
-        Route::get('users/{user}/photo', [UserController::class, 'photo'])->name('users.photo');
-    });
-    
+        Route::apiResource('users', UserController::class);});
+    Route::get('users/{user}/photo', [UserController::class, 'photo'])->name('users.photo');
+
     
     
 });
