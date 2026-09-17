@@ -8,8 +8,10 @@ use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\IncidentCategoryController;
 use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\UserController;
-Route::post('/login', [AuthController::class, 'login']);
+use App\Http\Controllers\ChecklistController;
+use App\Http\Controllers\TaskController;
 
+Route::post('/login', [AuthController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -34,7 +36,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::apiResource('users', UserController::class);});
     Route::get('users/{user}/photo', [UserController::class, 'photo'])->name('users.photo');
-
-    
-    
+    Route::post('/checklists', [ChecklistController::class, 'store']);
+    Route::post('/checklists/{checklist}/items', [ChecklistController::class, 'storeItem']);
+    Route::post('/inspections', [ChecklistController::class, 'storeInspection']);
+    Route::patch('/inspections/{inspection}/items/{item}',[ChecklistController::class, 'updateInspectionItemResult']);
+    Route::post('/inspections/{inspection}/items/{item}/findings',[ChecklistController::class, 'storeFinding']);
+    Route::post('/findings/{finding}/risk-assessments',[ChecklistController::class, 'storeRiskAssessment']);
+    Route::post('/findings/{finding}/capas',[ChecklistController::class, 'storeCapa']);
+    Route::patch('/capas/{capa}/status', [ChecklistController::class, 'updateCapaStatus']);
+    Route::patch('/capas/{capa}/verify', [ChecklistController::class, 'verifyCapa']);
+    Route::post('/capas/{capa}/tasks', [ChecklistController::class, 'storeTask']);
+    Route::get('/tasks', [TaskController::class, 'index']);
+    Route::get('/tasks/{task}', [TaskController::class, 'show']);
+    Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus']);
 });

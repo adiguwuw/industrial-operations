@@ -1,0 +1,32 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    public function up(): void
+    {
+        Schema::create('findings', function (Blueprint $table) {
+            $table->id();
+
+            $table->foreignId('safety_inspection_id')
+                ->constrained('safety_inspections')
+                ->cascadeOnDelete();
+
+            $table->foreignId('safety_inspection_item_id')
+                ->constrained('safety_inspection_items')
+                ->cascadeOnDelete();
+
+            $table->text('description');
+
+            $table->timestamps();
+        });
+    }
+
+    public function down(): void
+    {
+        Schema::dropIfExists('findings');
+    }
+};
