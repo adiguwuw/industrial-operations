@@ -16,6 +16,7 @@ class SafetyInspection extends Model
         'location',
         'inspection_date',
         'status',
+        'image_path',
     ];
 
     protected $casts = [

@@ -14,20 +14,67 @@ use App\Models\Task;
 
 class ChecklistController extends Controller
 {
-    public function store(Request $request): JsonResponse
+    public function index(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $checklists = Checklist::with('items')
+            ->latest()
+            ->get();
+
+        return response()->json([
+            'data' => $checklists,
+        ]);
+    }
+
+    public function storeInspection(Request $request): JsonResponse
     {
         abort_unless($request->user()->hasRole('admin'), 403);
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
+            'checklist_id' => ['required', 'exists:checklists,id'],
+            'location' => ['required', 'string', 'max:255'],
+            'inspection_date' => ['required', 'date'],
+            'image' => [
+                'nullable',
+                'image',
+                'mimes:jpeg,png,webp',
+                'max:5120',
+            ],
         ]);
 
-        $checklist = Checklist::create($validated);
+        $checklist = Checklist::with('items')
+            ->findOrFail($validated['checklist_id']);
+
+        $imagePath = null;
+
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store(
+                'safety-inspections',
+                'public'
+            );
+        }
+
+        $inspection = SafetyInspection::create([
+            'checklist_id' => $checklist->id,
+            'location' => $validated['location'],
+            'inspection_date' => $validated['inspection_date'],
+            'status' => 'draft',
+            'image_path' => $imagePath,
+        ]);
+
+        foreach ($checklist->items as $item) {
+            $inspection->items()->create([
+                'checklist_item_id' => $item->id,
+                'question' => $item->question,
+                'sort_order' => $item->sort_order,
+                'is_required' => $item->is_required,
+            ]);
+        }
 
         return response()->json([
-            'message' => 'Checklist created successfully.',
-            'data' => $checklist,
+            'message' => 'Safety inspection created successfully.',
+            'data' => $inspection->load('items'),
         ], 201);
     }
 
@@ -46,41 +93,6 @@ class ChecklistController extends Controller
         return response()->json([
             'message' => 'Checklist item created successfully.',
             'data' => $item,
-        ], 201);
-    }
-
-    public function storeInspection(Request $request): JsonResponse
-    {
-        abort_unless($request->user()->hasRole('admin'), 403);
-
-        $validated = $request->validate([
-            'checklist_id' => ['required', 'exists:checklists,id'],
-            'location' => ['required', 'string', 'max:255'],
-            'inspection_date' => ['required', 'date'],
-        ]);
-
-        $checklist = Checklist::with('items')
-            ->findOrFail($validated['checklist_id']);
-
-        $inspection = SafetyInspection::create([
-            'checklist_id' => $checklist->id,
-            'location' => $validated['location'],
-            'inspection_date' => $validated['inspection_date'],
-            'status' => 'draft',
-        ]);
-
-        foreach ($checklist->items as $item) {
-            $inspection->items()->create([
-                'checklist_item_id' => $item->id,
-                'question' => $item->question,
-                'sort_order' => $item->sort_order,
-                'is_required' => $item->is_required,
-            ]);
-        }
-
-        return response()->json([
-            'message' => 'Safety inspection created successfully.',
-            'data' => $inspection->load('items'),
         ], 201);
     }
 
@@ -126,12 +138,25 @@ class ChecklistController extends Controller
 
         $validated = $request->validate([
             'description' => ['required', 'string'],
+            'photo' => [
+                'nullable',
+                'image',
+                'mimes:jpeg,png,webp',
+                'max:5120',
+            ],
         ]);
+
+        $photoPath = null;
+
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('findings', 'public');
+        }
 
         $finding = Finding::create([
             'safety_inspection_id' => $inspection->id,
             'safety_inspection_item_id' => $item->id,
             'description' => $validated['description'],
+            'photo_path' => $photoPath,
         ]);
 
         return response()->json([
@@ -250,6 +275,9 @@ class ChecklistController extends Controller
 
         $task = $capa->tasks()->create([
             ...$validated,
+            'assigned_by' => $request->user()->id,
+            'source_type' => 'capa',
+            'source_id' => $capa->id,
             'status' => 'open',
         ]);
 
@@ -258,5 +286,51 @@ class ChecklistController extends Controller
             'data' => $task,
         ], 201);
     }
-    
+
+    public function indexInspections(): JsonResponse
+    {
+        abort_unless(request()->user()->hasRole('admin'), 403);
+
+        $inspections = SafetyInspection::with('items')
+            ->latest('inspection_date')
+            ->latest('id')
+            ->get();
+
+        return response()->json([
+            'data' => $inspections,
+        ]);
+    }
+
+    public function showInspection(
+        SafetyInspection $inspection
+    ): JsonResponse {
+        abort_unless(request()->user()->hasRole('admin'), 403);
+
+        $inspection->load([
+            'items',
+            'checklist',
+        ]);
+
+        return response()->json([
+            'data' => $inspection,
+        ]);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        abort_unless($request->user()->hasRole('admin'), 403);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string'],
+        ]);
+
+        $checklist = Checklist::create($validated);
+
+        return response()->json([
+            'message' => 'Checklist created successfully.',
+            'data' => $checklist,
+        ], 201);
+    }
+
 }

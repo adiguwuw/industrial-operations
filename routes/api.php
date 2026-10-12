@@ -36,17 +36,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::apiResource('users', UserController::class);});
     Route::get('users/{user}/photo', [UserController::class, 'photo'])->name('users.photo');
+    Route::get('/checklists', [ChecklistController::class, 'index']);
     Route::post('/checklists', [ChecklistController::class, 'store']);
     Route::post('/checklists/{checklist}/items', [ChecklistController::class, 'storeItem']);
     Route::post('/inspections', [ChecklistController::class, 'storeInspection']);
     Route::patch('/inspections/{inspection}/items/{item}',[ChecklistController::class, 'updateInspectionItemResult']);
     Route::post('/inspections/{inspection}/items/{item}/findings',[ChecklistController::class, 'storeFinding']);
+    Route::get('/inspections', [ChecklistController::class, 'indexInspections']);
+    Route::get('/inspections/{inspection}', [ChecklistController::class, 'showInspection']);
     Route::post('/findings/{finding}/risk-assessments',[ChecklistController::class, 'storeRiskAssessment']);
     Route::post('/findings/{finding}/capas',[ChecklistController::class, 'storeCapa']);
     Route::patch('/capas/{capa}/status', [ChecklistController::class, 'updateCapaStatus']);
     Route::patch('/capas/{capa}/verify', [ChecklistController::class, 'verifyCapa']);
     Route::post('/capas/{capa}/tasks', [ChecklistController::class, 'storeTask']);
+    Route::post('/tasks', [TaskController::class, 'store']);
     Route::get('/tasks', [TaskController::class, 'index']);
     Route::get('/tasks/{task}', [TaskController::class, 'show']);
     Route::patch('/tasks/{task}/status', [TaskController::class, 'updateStatus']);
+    Route::post('/tasks/{task}/submit', [TaskController::class, 'submit']);
+    Route::patch('/tasks/{task}/review', [TaskController::class, 'review']);
+
 });

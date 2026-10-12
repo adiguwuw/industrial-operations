@@ -11,10 +11,76 @@ use App\Models\SafetyInspection;
 use App\Models\SafetyInspectionItem;
 use App\Models\RiskAssessment;
 use App\Models\Finding;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class ChecklistTest extends TestCase
 {
     use RefreshDatabase;
+
+
+    public function test_admin_can_list_checklists(): void
+    {
+        Role::create([
+            'name' => 'admin',
+            'guard_name' => 'web',
+        ]);
+
+        $admin = User::factory()->create();
+        $admin->assignRole('admin');
+
+        $checklist = Checklist::create([
+            'name' => 'Pemeriksaan Keselamatan Area Produksi',
+            'description' => 'Checklist pemeriksaan rutin area produksi',
+        ]);
+
+        $checklist->items()->create([
+            'question' => 'APAR tersedia dan mudah diakses?',
+            'sort_order' => 1,
+            'is_required' => true,
+        ]);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->getJson('/api/checklists');
+
+        $response->assertStatus(200);
+
+        $response->assertJsonPath(
+            'data.0.id',
+            $checklist->id
+        );
+
+        $response->assertJsonPath(
+            'data.0.name',
+            'Pemeriksaan Keselamatan Area Produksi'
+        );
+
+        $response->assertJsonStructure([
+            'data' => [
+                '*' => [
+                    'id',
+                    'name',
+                    'description',
+                    'items',
+                ],
+            ],
+        ]);
+    }
+    public function test_employee_cannot_list_checklists(): void
+    {
+        Role::create([
+            'name' => 'employee',
+            'guard_name' => 'web',
+        ]);
+
+        $employee = User::factory()->create();
+        $employee->assignRole('employee');
+
+        $response = $this->actingAs($employee, 'sanctum')
+            ->getJson('/api/checklists');
+
+        $response->assertStatus(403);
+    }
 
     public function test_admin_can_create_checklist(): void
     {
@@ -460,5 +526,192 @@ class ChecklistTest extends TestCase
             'message' => 'Risk assessment created successfully.',
             'data' => $riskAssessment,
         ], 201);
+    }
+
+    public function test_admin_can_create_finding_with_photo(): void
+    {
+        Storage::fake('public');
+
+        Role::create([
+            'name' => 'admin',
+            'guard_name' => 'web',
+        ]);
+
+        $admin = User::factory()->create();
+
+        $admin->assignRole('admin');
+
+        $checklist = Checklist::create([
+            'name' => 'Pemeriksaan Keselamatan Area Produksi',
+        ]);
+
+        $checklistItem = $checklist->items()->create([
+            'question' => 'Jalur evakuasi tidak terhalang?',
+            'sort_order' => 1,
+            'is_required' => true,
+        ]);
+
+        $inspection = SafetyInspection::create([
+            'checklist_id' => $checklist->id,
+            'location' => 'Area Produksi A',
+            'inspection_date' => '2026-09-17',
+            'status' => 'draft',
+        ]);
+
+        $inspectionItem = $inspection->items()->create([
+            'checklist_item_id' => $checklistItem->id,
+            'question' => $checklistItem->question,
+            'sort_order' => $checklistItem->sort_order,
+            'is_required' => $checklistItem->is_required,
+            'result' => 'FAIL',
+        ]);
+
+        $photo = UploadedFile::fake()->image('finding.jpg');
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->post(
+                "/api/inspections/{$inspection->id}/items/{$inspectionItem->id}/findings",
+                [
+                    'description' => 'Jalur evakuasi terhalang material produksi.',
+                    'photo' => $photo,
+                ]
+            );
+
+        $response->assertStatus(201);
+
+        $this->assertDatabaseHas('findings', [
+            'safety_inspection_id' => $inspection->id,
+            'safety_inspection_item_id' => $inspectionItem->id,
+            'description' => 'Jalur evakuasi terhalang material produksi.',
+        ]);
+
+        $finding = Finding::query()
+            ->where('safety_inspection_id', $inspection->id)
+            ->where('safety_inspection_item_id', $inspectionItem->id)
+            ->firstOrFail();
+
+        $this->assertNotNull($finding->photo_path);
+
+        Storage::disk('public')->assertExists($finding->photo_path);
+    }
+
+    public function test_admin_cannot_create_finding_with_invalid_photo(): void
+    {
+        Storage::fake('public');
+
+        Role::create([
+            'name' => 'admin',
+            'guard_name' => 'web',
+        ]);
+
+        $admin = User::factory()->create();
+
+        $admin->assignRole('admin');
+
+        $checklist = Checklist::create([
+            'name' => 'Pemeriksaan Keselamatan Area Produksi',
+        ]);
+
+        $checklistItem = $checklist->items()->create([
+            'question' => 'Jalur evakuasi tidak terhalang?',
+            'sort_order' => 1,
+            'is_required' => true,
+        ]);
+
+        $inspection = SafetyInspection::create([
+            'checklist_id' => $checklist->id,
+            'location' => 'Area Produksi A',
+            'inspection_date' => '2026-09-17',
+            'status' => 'draft',
+        ]);
+
+        $inspectionItem = $inspection->items()->create([
+            'checklist_item_id' => $checklistItem->id,
+            'question' => $checklistItem->question,
+            'sort_order' => $checklistItem->sort_order,
+            'is_required' => $checklistItem->is_required,
+            'result' => 'FAIL',
+        ]);
+
+        $photo = UploadedFile::fake()->create(
+            'finding.pdf',
+            100,
+            'application/pdf'
+        );
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->post(
+                "/api/inspections/{$inspection->id}/items/{$inspectionItem->id}/findings",
+                [
+                    'description' => 'Jalur evakuasi terhalang material produksi.',
+                    'photo' => $photo,
+                ]
+            );
+
+        $response->assertStatus(422);
+
+        $response->assertJsonValidationErrors([
+            'photo',
+        ]);
+
+        $this->assertDatabaseCount('findings', 0);
+    }
+
+    public function test_admin_cannot_create_finding_with_photo_larger_than_5_mb(): void
+    {
+        Storage::fake('public');
+
+        Role::create([
+            'name' => 'admin',
+            'guard_name' => 'web',
+        ]);
+
+        $admin = User::factory()->create();
+
+        $admin->assignRole('admin');
+
+        $checklist = Checklist::create([
+            'name' => 'Pemeriksaan Keselamatan Area Produksi',
+        ]);
+
+        $checklistItem = $checklist->items()->create([
+            'question' => 'Jalur evakuasi tidak terhalang?',
+            'sort_order' => 1,
+            'is_required' => true,
+        ]);
+
+        $inspection = SafetyInspection::create([
+            'checklist_id' => $checklist->id,
+            'location' => 'Area Produksi A',
+            'inspection_date' => '2026-09-17',
+            'status' => 'draft',
+        ]);
+
+        $inspectionItem = $inspection->items()->create([
+            'checklist_item_id' => $checklistItem->id,
+            'question' => $checklistItem->question,
+            'sort_order' => $checklistItem->sort_order,
+            'is_required' => true,
+            'result' => 'FAIL',
+        ]);
+
+        $photo = UploadedFile::fake()->image('finding.jpg')->size(5121);
+
+        $response = $this->actingAs($admin, 'sanctum')
+            ->post(
+                "/api/inspections/{$inspection->id}/items/{$inspectionItem->id}/findings",
+                [
+                    'description' => 'Jalur evakuasi terhalang material produksi.',
+                    'photo' => $photo,
+                ]
+            );
+
+        $response->assertStatus(422);
+
+        $response->assertJsonValidationErrors([
+            'photo',
+        ]);
+
+        $this->assertDatabaseCount('findings', 0);
     }
 }

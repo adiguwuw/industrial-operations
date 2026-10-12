@@ -17,6 +17,7 @@ class Finding extends Model
         'safety_inspection_id',
         'safety_inspection_item_id',
         'description',
+        'photo_path',
     ];
 
     public function safetyInspection(): BelongsTo
