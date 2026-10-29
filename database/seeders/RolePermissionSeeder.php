@@ -68,6 +68,8 @@ class RolePermissionSeeder extends Seeder
 
         $supervisor->syncPermissions([
             'incident.view',
+            'incident.view-all',
+            'incident.create',
             'incident.investigate',
             'incident.resolve',
             'incident.comment',

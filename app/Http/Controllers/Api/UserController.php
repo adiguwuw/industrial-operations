@@ -199,4 +199,16 @@ class UserController extends Controller
             'updated_at' => $user->updated_at,
         ];
     }
+
+    public function taskAssignees()
+    {
+        $employees = User::role('employee')
+            ->select(['id', 'name', 'email'])
+            ->orderBy('name')
+            ->get();
+
+        return response()->json([
+            'data' => $employees,
+        ]);
+    }
 }

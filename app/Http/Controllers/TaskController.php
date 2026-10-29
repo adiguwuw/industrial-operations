@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Task;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
 {
@@ -125,17 +126,40 @@ class TaskController extends Controller
             'assigned_to' => ['required', 'exists:users,id'],
             'due_date' => ['required', 'date'],
             'task_photo' => [
-                    'required',
-                    'image',
-                    'mimes:jpeg,png,webp',
-                    'max:5120',
-                ],
+                'required',
+                'image',
+                'mimes:jpeg,png,webp',
+                'max:5120',
+            ],
         ]);
 
-        $taskPhotoPath = $request->file('task_photo')->store(
-            'task-photos',
-            'public'
-        );
+        try {
+            $taskPhotoPath = $request->file('task_photo')->store(
+                'task-photos',
+                'public'
+            );
+
+            if ($taskPhotoPath === false) {
+                Log::error('Task photo storage returned false.', [
+                    'user_id' => $request->user()->id,
+                    'disk' => 'public',
+                ]);
+
+                return response()->json([
+                    'message' => 'Failed to store task photo.',
+                ], 500);
+            }
+        } catch (\Throwable $exception) {
+            Log::error('Task photo upload failed.', [
+                'user_id' => $request->user()->id,
+                'disk' => 'public',
+                'exception' => $exception->getMessage(),
+            ]);
+
+            return response()->json([
+                'message' => 'Failed to store task photo.',
+            ], 500);
+        }
 
         $task = Task::create([
             'capa_id' => null,
