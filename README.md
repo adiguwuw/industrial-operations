@@ -91,3 +91,54 @@ Project menggunakan pendekatan **separated frontend & backend architecture**.
               └─────────────┬─────────────┘
                             │
                           MySQL
+
+```
+
+## Pengembangan lokal dengan Docker Compose
+
+### Tata letak repository
+
+Compose membangun frontend dari folder `../industrial-operations-fe`. Clone kedua repository berdampingan:
+
+```text
+Ind-Projects/
+├── industrial-operations/
+└── industrial-operations-fe/
+```
+
+Gunakan Docker Desktop dengan integrasi WSL 2 aktif. Jalankan perintah berikut dari folder backend (`industrial-operations`).
+
+### Siapkan environment lokal
+
+```bash
+cp .env.docker.example .env.docker
+```
+
+Isi `APP_KEY`, `DB_USERNAME`, `DB_PASSWORD`, dan `DB_ROOT_PASSWORD` dengan nilai unik untuk environment-mu. Untuk membuat key Laravel lokal, jalankan `openssl rand -base64 32`, lalu isi `APP_KEY` dengan awalan `base64:` diikuti hasilnya. Simpan hasil key hanya di `.env.docker`; jangan kirim atau commit nilainya. `APP_URL` dapat disesuaikan dengan alamat lokal. `.env.docker` sudah diabaikan oleh Git; commit template `.env.docker.example`, bukan file lokal tersebut.
+
+### Bangun dan jalankan container
+
+```bash
+docker compose -f compose.yaml --env-file .env.docker up -d --build
+docker compose -f compose.yaml --env-file .env.docker ps
+```
+
+Pada database baru, jalankan migration dan seeder role/permission, lalu buat admin pertama. Seeder ini hanya menyiapkan role dan permission. `app:create-admin` meminta password secara tersembunyi dan hanya membuat admin jika belum ada.
+
+```bash
+docker compose -f compose.yaml --env-file .env.docker exec backend php artisan migrate --force
+docker compose -f compose.yaml --env-file .env.docker exec backend php artisan db:seed --class=RolePermissionSeeder --force
+docker compose -f compose.yaml --env-file .env.docker exec backend php artisan app:create-admin
+```
+
+Jangan jalankan `migrate:fresh` pada database yang berisi data. Seeder penuh juga menambahkan akun dan insiden demo; gunakan seeder khusus role di atas untuk setup ini.
+
+### Akses dan data
+
+- phpMyAdmin: `http://localhost:8081` (host lokal saja).
+- Nginx Proxy Manager: `http://localhost:8082` (host lokal saja).
+- Database MySQL hanya tersedia pada jaringan internal Compose, tanpa port host langsung.
+- Setiap developer memiliki volume `mysql_data` sendiri; database lokal tidak otomatis dibagikan ke komputer lain.
+- `docker compose ... down` menghentikan dan menghapus container, tetapi named volume tetap ada. Jangan tambahkan `-v` kecuali memang ingin menghapus volume dan data.
+
+Jangan publikasikan `.env.docker`, password, atau `APP_KEY` ke Git maupun chat.

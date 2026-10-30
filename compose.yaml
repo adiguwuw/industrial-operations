@@ -1,0 +1,117 @@
+services:
+  db:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-industrial_operations}
+      MYSQL_USER: ${DB_USERNAME:?DB_USERNAME must be set}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?DB_ROOT_PASSWORD must be set}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - app_internal
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mysqladmin ping -h 127.0.0.1 -u root -p"$${MYSQL_ROOT_PASSWORD}" --silent
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      APP_KEY: ${APP_KEY:?APP_KEY must be set}
+      APP_DEBUG: "false"
+      APP_URL: ${APP_URL:-http://localhost}
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-industrial_operations}
+      DB_USERNAME: ${DB_USERNAME:?DB_USERNAME must be set}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
+      CACHE_STORE: database
+      SESSION_DRIVER: database
+      QUEUE_CONNECTION: database
+      FILESYSTEM_DISK: local
+    volumes:
+      - private_storage:/var/www/html/storage/app/private
+      - public_storage:/var/www/html/storage/app/public
+    networks:
+      - app_internal
+    depends_on:
+      db:
+        condition: service_healthy
+    expose:
+      - "9000"
+
+  frontend:
+    build:
+      context: ../industrial-operations-fe
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - public_storage:/var/www/html/storage/app/public:ro
+    networks:
+      - app_internal
+      - proxy_network
+    depends_on:
+      - backend
+    expose:
+      - "80"
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: "0"
+    networks:
+      - app_internal
+    depends_on:
+      db:
+        condition: service_healthy
+
+  phpmyadmin-port-proxy:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8081:80"
+    volumes:
+      - ./phpmyadmin-proxy.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - app_internal
+      - proxy_network
+    depends_on:
+      - phpmyadmin
+
+  proxy:
+    image: jc21/nginx-proxy-manager:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "127.0.0.1:8082:81"
+    volumes:
+      - npm_data:/data
+      - npm_letsencrypt:/etc/letsencrypt
+    networks:
+      - proxy_network
+
+networks:
+  app_internal:
+    internal: true
+  proxy_network:
+
+volumes:
+  mysql_data:
+  private_storage:
+  public_storage:
+  npm_data:
+  npm_letsencrypt:
