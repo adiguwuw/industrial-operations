@@ -145,3 +145,11 @@ Jangan jalankan `migrate:fresh` pada database yang berisi data. Seeder penuh jug
 - `docker compose ... down` menghentikan dan menghapus container, tetapi named volume tetap ada. Jangan tambahkan `-v` kecuali memang ingin menghapus volume dan data.
 
 Jangan publikasikan `.env.docker`, password, atau `APP_KEY` ke Git maupun chat.
+
+## Deployment untuk demo portofolio gratis
+
+Blueprint Render di `render.yaml` membangun Dockerfile yang sudah ada lalu menjalankan Laravel sebagai server HTTP. Compose lokal tidak berubah. Saat service mulai, script menjalankan migrasi database dan mengisi role serta permission saja; script tidak membuat akun admin atau data demo.
+
+Buat MySQL Aiven Free terlebih dahulu. Saat menyinkronkan Blueprint di Render, isi koneksi database dan `APP_KEY` pada form Render. Kamu bisa membuat key di terminal lokal dengan `docker compose exec backend php artisan key:generate --show`; simpan nilainya hanya di Render. Tambahkan sertifikat CA Aiven sebagai secret file bernama `aiven-ca.pem`. Konfigurasi Render membacanya dari `/etc/secrets/aiven-ca.pem`. Jangan masukkan kredensial atau APP_KEY ke Git atau chat.
+
+Penyimpanan file Render Free bersifat sementara. Aplikasi menyimpan foto profil dan foto insiden di disk privat lokal, serta foto temuan dan bukti task di disk publik lokal. File tersebut dapat hilang saat service restart, redeploy, atau spin down. Gunakan deployment ini sebagai demo sampai object storage permanen dikonfigurasi.

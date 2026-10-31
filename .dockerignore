@@ -17,3 +17,5 @@ storage/framework/views/*
 .vscode
 .DS_Store
 Thumbs.db
+
+*.bak

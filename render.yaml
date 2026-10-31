@@ -1,0 +1,51 @@
+# Render Blueprint for a portfolio deployment. Secrets are entered in Render, never stored here.
+services:
+  - type: web
+    name: industrial-operations-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    dockerCommand: /bin/sh ./render-start.sh
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: "Industrial Operations"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        sync: false
+      - key: APP_URL
+        fromService:
+          type: web
+          name: industrial-operations-api
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: info
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_DATABASE
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: MYSQL_ATTR_SSL_CA
+        value: /etc/secrets/aiven-ca.pem
+      - key: SESSION_DRIVER
+        value: file
+      - key: CACHE_STORE
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: FILESYSTEM_DISK
+        value: local

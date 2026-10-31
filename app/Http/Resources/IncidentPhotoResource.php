@@ -4,7 +4,6 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class IncidentPhotoResource extends JsonResource
 {
@@ -16,18 +15,12 @@ class IncidentPhotoResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-                'id' => $this->id,
-                'original_name' => $this->original_name,
-                'mime_type' => $this->mime_type,
-                'file_size' => $this->file_size,
-                'url' => route(
-                    'incidents.photos.file',
-                    [
-                        'incident' => $this->incident_id,
-                        'photo' => $this->id,
-                    ]
-                ),
-                'created_at' => $this->created_at,
+            'id' => $this->id,
+            'original_name' => $this->original_name,
+            'mime_type' => $this->mime_type,
+            'file_size' => $this->file_size,
+            'url' => "/incidents/{$this->incident_id}/photos/{$this->id}/file",
+            'created_at' => $this->created_at,
         ];
     }
 }
