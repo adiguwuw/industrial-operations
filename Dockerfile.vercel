@@ -1,0 +1,52 @@
+FROM dunglas/frankenphp:1.13.4-php8.5-bookworm
+
+RUN cp "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini" \
+    && install-php-extensions bcmath gd intl mbstring pdo_mysql zip \
+    && printf 'upload_max_filesize=8M\npost_max_size=10M\n' > "$PHP_INI_DIR/conf.d/uploads.ini"
+
+WORKDIR /app
+
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+COPY composer.json composer.lock ./
+
+RUN composer install \
+    --no-dev \
+    --prefer-dist \
+    --no-interaction \
+    --no-progress \
+    --optimize-autoloader \
+    --no-scripts
+
+COPY . .
+
+RUN mkdir -p \
+       storage/app/private \
+       storage/app/public \
+       storage/framework/cache/data \
+       storage/framework/sessions \
+       storage/framework/views \
+       storage/logs \
+       bootstrap/cache \
+    && composer dump-autoload --no-dev --classmap-authoritative \
+    && setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp \
+    && chown -R www-data:www-data /config/caddy /data/caddy
+
+COPY --chown=www-data:www-data Caddyfile.vercel /etc/frankenphp/Caddyfile
+COPY --chown=www-data:www-data vercel-entrypoint.sh /usr/local/bin/vercel-entrypoint
+
+RUN chmod 0555 /usr/local/bin/vercel-entrypoint
+
+ENV PORT=80 \
+    APP_ENV=production \
+    APP_DEBUG=false \
+    LOG_CHANNEL=stderr \
+    SESSION_DRIVER=array \
+    CACHE_STORE=array \
+    QUEUE_CONNECTION=sync \
+    LARAVEL_STORAGE_PATH=/tmp/laravel-storage \
+    VIEW_COMPILED_PATH=/tmp/laravel-storage/framework/views
+
+USER www-data
+
+ENTRYPOINT ["/usr/local/bin/vercel-entrypoint"]
+CMD ["frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile"]

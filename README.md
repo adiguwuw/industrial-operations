@@ -153,3 +153,7 @@ Blueprint Render di `render.yaml` membangun Dockerfile yang sudah ada lalu menja
 Buat MySQL Aiven Free terlebih dahulu. Saat menyinkronkan Blueprint di Render, isi koneksi database dan `APP_KEY` pada form Render. Kamu bisa membuat key di terminal lokal dengan `docker compose exec backend php artisan key:generate --show`; simpan nilainya hanya di Render. Tambahkan sertifikat CA Aiven sebagai secret file bernama `aiven-ca.pem`. Konfigurasi Render membacanya dari `/etc/secrets/aiven-ca.pem`. Jangan masukkan kredensial atau APP_KEY ke Git atau chat.
 
 Penyimpanan file Render Free bersifat sementara. Aplikasi menyimpan foto profil dan foto insiden di disk privat lokal, serta foto temuan dan bukti task di disk publik lokal. File tersebut dapat hilang saat service restart, redeploy, atau spin down. Gunakan deployment ini sebagai demo sampai object storage permanen dikonfigurasi.
+
+## Deploy to Vercel
+
+See [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md) for the backend container setup, Aiven environment variables, migration guidance, and temporary upload-storage limits.

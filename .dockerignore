@@ -19,3 +19,6 @@ storage/framework/views/*
 Thumbs.db
 
 *.bak
+
+storage/app/private
+storage/app/public
