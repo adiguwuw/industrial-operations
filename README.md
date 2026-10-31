@@ -135,8 +135,11 @@ Jangan jalankan `migrate:fresh` pada database yang berisi data. Seeder penuh jug
 
 ### Akses dan data
 
+- Aplikasi frontend lokal: `http://localhost:8080` (hanya dapat diakses dari mesin host).
 - phpMyAdmin: `http://localhost:8081` (host lokal saja).
 - Nginx Proxy Manager: `http://localhost:8082` (host lokal saja).
+- Untuk domain publik, arahkan DNS ke server lalu buat Proxy Host di Nginx Proxy Manager: forward scheme HTTP, hostname frontend, port 80. Aktifkan SSL setelah domain dan port 80/443 siap.
+- Halaman admin Nginx Proxy Manager dan phpMyAdmin tetap terikat ke loopback; akses jarak jauh ke halaman admin sebaiknya melalui SSH tunnel.
 - Database MySQL hanya tersedia pada jaringan internal Compose, tanpa port host langsung.
 - Setiap developer memiliki volume `mysql_data` sendiri; database lokal tidak otomatis dibagikan ke komputer lain.
 - `docker compose ... down` menghentikan dan menghapus container, tetapi named volume tetap ada. Jangan tambahkan `-v` kecuali memang ingin menghapus volume dan data.

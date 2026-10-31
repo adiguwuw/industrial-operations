@@ -26,6 +26,9 @@ RUN docker-php-ext-install pdo_mysql
 
 RUN docker-php-ext-install zip
 
+# Match the 5 MB image validation rules while allowing multipart overhead.
+RUN printf 'upload_max_filesize=8M\npost_max_size=10M\n' > /usr/local/etc/php/conf.d/uploads.ini
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
