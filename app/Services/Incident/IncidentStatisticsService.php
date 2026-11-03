@@ -9,20 +9,40 @@ class IncidentStatisticsService
 {
     public function getStatistics(): array
     {
+        $statistics = Incident::query()
+            ->selectRaw(
+                'COUNT(*) as total,
+                COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as pending,
+                COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as investigating,
+                COALESCE(SUM(CASE WHEN status = ? THEN 1 ELSE 0 END), 0) as resolved,
+                COALESCE(SUM(CASE WHEN severity = ? THEN 1 ELSE 0 END), 0) as critical,
+                COALESCE(SUM(CASE WHEN severity = ? THEN 1 ELSE 0 END), 0) as high,
+                COALESCE(SUM(CASE WHEN severity = ? THEN 1 ELSE 0 END), 0) as medium,
+                COALESCE(SUM(CASE WHEN severity = ? THEN 1 ELSE 0 END), 0) as low',
+                [
+                    'pending',
+                    'investigating',
+                    'resolved',
+                    'critical',
+                    'high',
+                    'medium',
+                    'low',
+                ]
+            )
+            ->first();
+
         return [
-            'total' => Incident::count(),
-
+            'total' => (int) $statistics->total,
             'status' => [
-                'pending' => Incident::where('status', 'pending')->count(),
-                'investigating' => Incident::where('status', 'investigating')->count(),
-                'resolved' => Incident::where('status', 'resolved')->count(),
+                'pending' => (int) $statistics->pending,
+                'investigating' => (int) $statistics->investigating,
+                'resolved' => (int) $statistics->resolved,
             ],
-
             'severity' => [
-                'critical' => Incident::where('severity', 'critical')->count(),
-                'high' => Incident::where('severity', 'high')->count(),
-                'medium' => Incident::where('severity', 'medium')->count(),
-                'low' => Incident::where('severity', 'low')->count(),
+                'critical' => (int) $statistics->critical,
+                'high' => (int) $statistics->high,
+                'medium' => (int) $statistics->medium,
+                'low' => (int) $statistics->low,
             ],
         ];
     }
